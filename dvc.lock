@@ -5,24 +5,24 @@ stages:
     deps:
     - path: src/data_ingestion.py
       hash: md5
-      md5: b7112217a4835255a269e335afc8e927
-      size: 6048
+      md5: 8dde78c4af4b8c7cc231d5d820a8b92c
+      size: 6054
     params:
       params.yaml:
-        data_ingestion.test_size: 0.2
+        data_ingestion.test_size: 0.15
     outs:
     - path: data/raw
       hash: md5
-      md5: f62198b7ff8dde25ecf8b661e9d969fc.dir
-      size: 17370
+      md5: 65b3b6b233511a51f1a42f4de8b2a29c.dir
+      size: 9938
       nfiles: 2
   data_preprocessing:
     cmd: python src/Pre-processing.py
     deps:
     - path: data/raw
       hash: md5
-      md5: d15675b3a593a03b1d9fd2999227b0f3.dir
-      size: 34740
+      md5: fcf7b0ed37202c752dab2dc4c3a97e6c.dir
+      size: 27308
       nfiles: 4
     - path: src/Pre-processing.py
       hash: md5
@@ -87,13 +87,13 @@ stages:
       size: 31153
     - path: src/Model_evaluation.py
       hash: md5
-      md5: 594e0efe1ebd12a43a88c8de95464b92
-      size: 4537
+      md5: acfd91ea9cbce9a8bc3b7cf9d00b7138
+      size: 5382
     outs:
     - path: reports/metrics.json
       hash: md5
-      md5: d5da8eb56f3c45ce8683b2acaeed27fa
-      size: 61
+      md5: ca0dad472960160bcd1ae9f3e014706d
+      size: 93
     - path: reports/testing_set_comparison.png
       hash: md5
       md5: 05d70e1c7c71fc7477435d9ed5a7a4cb

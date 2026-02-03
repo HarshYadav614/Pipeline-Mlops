@@ -4,7 +4,9 @@ import logging
 import joblib
 import matplotlib.pyplot as plt
 import json  
+import yaml
 from sklearn import metrics
+from dvclive import Live
 
 # 1. LOGGING CONFIGURATION
 
@@ -28,6 +30,17 @@ logger.addHandler(file_handler)
 
 # 2. FUNCTION DEFINITIONS
 
+def load_params(params_path: str) -> dict:
+    """Load parameters from a YAML file."""
+    try:
+        with open(params_path, 'r') as file:
+            params = yaml.safe_load(file)
+        logger.debug('Parameters retrieved from %s', params_path)
+        return params
+    except Exception as e:
+        logger.error('Unexpected error loading params: %s', e)
+        raise
+
 def load_evaluation_artifacts(model_path: str, train_path: str, test_path: str):
     """Load the model and both processed datasets for evaluation."""
     try:
@@ -41,7 +54,7 @@ def load_evaluation_artifacts(model_path: str, train_path: str, test_path: str):
         raise
 
 def evaluate_performance(model, df: pd.DataFrame, target_column: str, stage_name: str):
-    """Calculate R2 Score and Error for a specific dataset stage."""
+    """Calculate R2 Score and MAE for a specific dataset stage."""
     try:
         X = df.drop(columns=[target_column])
         y = df[target_column]
@@ -51,7 +64,7 @@ def evaluate_performance(model, df: pd.DataFrame, target_column: str, stage_name
         mae = metrics.mean_absolute_error(y, predictions)
         
         logger.info(f"{stage_name} Results -> R2: {r2:.4f}, MAE: {mae:.4f}")
-        return y, predictions, r2
+        return y, predictions, r2, mae
 
     except Exception as e:
         logger.error(f'Error during {stage_name} evaluation: {e}')
@@ -74,10 +87,13 @@ def save_evaluation_plots(y_actual, y_pred, stage_name: str, reports_dir: str):
         logger.error(f'Failed to save plot for {stage_name}: {e}')
         raise
 
-# 3. MAIN EVALUATION PIPELINE
+# 3. MAIN EVALUATION PIPELINE (WITH DVCLIVE)
 
 def main():
     try:
+        # Load params from YAML
+        params = load_params(params_path='params.yaml')
+        
         # Paths
         base_data_path = './data/processed'
         model_path = './models/best_model.pkl'
@@ -93,34 +109,40 @@ def main():
             os.path.join(base_data_path, 'test_processed.csv')
         )
 
-        # Step 2: Evaluate Training Set
-        y_train_act, y_train_pred, r2_train = evaluate_performance(
+        # Step 2: Evaluate Performance
+        y_train_act, y_train_pred, r2_train, mae_train = evaluate_performance(
             best_model, train_processed, target_col, "Training_Set"
         )
-        save_evaluation_plots(y_train_act, y_train_pred, "Training_Set", reports_dir)
-
-        # Step 3: Evaluate Testing Set
-        y_test_act, y_test_pred, r2_test = evaluate_performance(
+        y_test_act, y_test_pred, r2_test, mae_test = evaluate_performance(
             best_model, test_processed, target_col, "Testing_Set"
         )
-        save_evaluation_plots(y_test_act, y_test_pred, "Testing_Set", reports_dir)
 
-        # Step 4: NEW - SAVE METRICS TO JSON FOR DVC
+        # Step 3: Experiment tracking using DVCLIVE (From Image Logic)
+        with Live(save_dvc_exp=True) as live:
+            # Log Metrics
+            live.log_metric('train/r2', float(r2_train))
+            live.log_metric('test/r2', float(r2_test))
+            live.log_metric('test/mae', float(mae_test))
+            
+            # Log Parameters
+            live.log_params(params)
+            
+            # Save visual plots
+            save_evaluation_plots(y_train_act, y_train_pred, "Training_Set", reports_dir)
+            save_evaluation_plots(y_test_act, y_test_pred, "Testing_Set", reports_dir)
+
+        # Step 4: Legacy JSON save (to keep your dvc.yaml happy)
         metrics_data = {
             "train_r2": float(r2_train),
-            "test_r2": float(r2_test)
+            "test_r2": float(r2_test),
+            "mae": float(mae_test)
         }
-        
-        metrics_file = os.path.join(reports_dir, 'metrics.json')
-        with open(metrics_file, 'w') as f:
+        with open(os.path.join(reports_dir, 'metrics.json'), 'w') as f:
             json.dump(metrics_data, f, indent=4)
             
         print("\n--- Model Evaluation Complete ---")
-        print(f"Train R2 Score: {r2_train:.4f}")
         print(f"Test R2 Score:  {r2_test:.4f}")
-        print(f"Metrics saved to: {metrics_file}")
-        
-        logger.info("Model Evaluation stage completed successfully and metrics.json saved.")
+        logger.info("Model Evaluation stage completed successfully.")
 
     except Exception as e:
         logger.error('Evaluation process failed: %s', e)

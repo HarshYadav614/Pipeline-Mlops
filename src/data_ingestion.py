@@ -135,7 +135,7 @@ def main():
         # Step 3: Splitting
         params = load_params(params_path='params.yaml')
         test_size = params['data_ingestion']['test_size']
-        train_df, test_df = train_test_split(df, test_size=test_size, random_state=42)
+        train_df, test_df = train_test_split(final_df, test_size=test_size, random_state=42)
         
         # Step 4: Save Raw Splits (Your requested format)
         save_data(train_df, test_df, data_path='./data')
