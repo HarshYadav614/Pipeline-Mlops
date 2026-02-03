@@ -1,0 +1,47 @@
+stages:
+  data_ingestion:
+    cmd: python src/data_ingestion.py
+    deps:
+      - src/data_ingestion.py
+    
+    outs:
+      - data/raw
+
+  data_preprocessing:
+    cmd: python src/Pre-processing.py
+    deps:
+      - data/raw
+      - src/Pre-processing.py
+    outs:
+      - data/interim
+
+  feature_engineering:
+    cmd: python src/Feature_engineering.py
+    deps:
+      - data/interim
+      - src/Feature_engineering.py
+    outs:
+      - data/processed
+      - models/scaler.pkl  # Move this here! It is an output, not a metric.
+
+  model_training:
+    cmd: python src/Model_training.py
+    deps:
+      - data/processed
+      - src/Model_training.py
+    outs:
+      - models/best_model.pkl
+
+  model_evaluation:
+    cmd: python src/Model_evaluation.py
+    deps:
+      - models/best_model.pkl
+      - data/processed
+      - src/Model_evaluation.py
+    
+    metrics:
+      - reports/metrics.json: 
+          cache: false
+    plots:
+      - reports/training_set_comparison.png
+      - reports/testing_set_comparison.png

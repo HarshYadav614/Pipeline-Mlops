@@ -3,7 +3,7 @@ import os
 import logging
 import joblib
 import matplotlib.pyplot as plt
-import seaborn as sns
+import json  
 from sklearn import metrics
 
 # 1. LOGGING CONFIGURATION
@@ -34,7 +34,7 @@ def load_evaluation_artifacts(model_path: str, train_path: str, test_path: str):
         model = joblib.load(model_path)
         train_df = pd.read_csv(train_path)
         test_df = pd.read_csv(test_path)
-        logger.debug('Successfully loaded model and processed data for evaluation.')
+        logger.debug('Successfully loaded model and processed data.')
         return model, train_df, test_df
     except Exception as e:
         logger.error('Failed to load evaluation artifacts: %s', e)
@@ -58,7 +58,7 @@ def evaluate_performance(model, df: pd.DataFrame, target_column: str, stage_name
         raise
 
 def save_evaluation_plots(y_actual, y_pred, stage_name: str, reports_dir: str):
-    """Generate and save scatter plots (Actual vs Predicted) as per Jupyter cells 57-58."""
+    """Generate and save scatter plots."""
     try:
         plt.figure(figsize=(10, 6))
         plt.scatter(y_actual, y_pred, color='blue', alpha=0.5)
@@ -93,24 +93,34 @@ def main():
             os.path.join(base_data_path, 'test_processed.csv')
         )
 
-        # Step 2: Evaluate Training Set (Cell 57 logic)
+        # Step 2: Evaluate Training Set
         y_train_act, y_train_pred, r2_train = evaluate_performance(
             best_model, train_processed, target_col, "Training_Set"
         )
         save_evaluation_plots(y_train_act, y_train_pred, "Training_Set", reports_dir)
 
-        # Step 3: Evaluate Testing Set (Cell 58 logic)
+        # Step 3: Evaluate Testing Set
         y_test_act, y_test_pred, r2_test = evaluate_performance(
             best_model, test_processed, target_col, "Testing_Set"
         )
         save_evaluation_plots(y_test_act, y_test_pred, "Testing_Set", reports_dir)
 
+        # Step 4: NEW - SAVE METRICS TO JSON FOR DVC
+        metrics_data = {
+            "train_r2": float(r2_train),
+            "test_r2": float(r2_test)
+        }
+        
+        metrics_file = os.path.join(reports_dir, 'metrics.json')
+        with open(metrics_file, 'w') as f:
+            json.dump(metrics_data, f, indent=4)
+            
         print("\n--- Model Evaluation Complete ---")
         print(f"Train R2 Score: {r2_train:.4f}")
         print(f"Test R2 Score:  {r2_test:.4f}")
-        print(f"Reports saved in: {os.path.abspath(reports_dir)}")
+        print(f"Metrics saved to: {metrics_file}")
         
-        logger.info("Model Evaluation stage completed successfully.")
+        logger.info("Model Evaluation stage completed successfully and metrics.json saved.")
 
     except Exception as e:
         logger.error('Evaluation process failed: %s', e)

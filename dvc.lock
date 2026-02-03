@@ -1,0 +1,101 @@
+schema: '2.0'
+stages:
+  data_ingestion:
+    cmd: python src/data_ingestion.py
+    deps:
+    - path: src/data_ingestion.py
+      hash: md5
+      md5: c7a67daeb67b6ffc684ffceac6ed786d
+      size: 5353
+    outs:
+    - path: data/raw
+      hash: md5
+      md5: a1e59e1e6125832377ba172d0e820ee4.dir
+      size: 9938
+      nfiles: 2
+  data_preprocessing:
+    cmd: python src/Pre-processing.py
+    deps:
+    - path: data/raw
+      hash: md5
+      md5: 72cef7522006295a7c45f147be511250.dir
+      size: 27308
+      nfiles: 4
+    - path: src/Pre-processing.py
+      hash: md5
+      md5: 4ea9823468ed9ae1347ad8be780f31e1
+      size: 3833
+    outs:
+    - path: data/interim
+      hash: md5
+      md5: 09a1201f9e1050ca0e11bd3ae72e4275.dir
+      size: 9929
+      nfiles: 2
+  feature_engineering:
+    cmd: python src/Feature_engineering.py
+    deps:
+    - path: data/interim
+      hash: md5
+      md5: 09a1201f9e1050ca0e11bd3ae72e4275.dir
+      size: 9929
+      nfiles: 2
+    - path: src/Feature_engineering.py
+      hash: md5
+      md5: e11dadbe44f024a710ded3a3d00b86be
+      size: 4246
+    outs:
+    - path: data/processed
+      hash: md5
+      md5: 1018627b8f906db5b00a8256d2a20e9d.dir
+      size: 49110
+      nfiles: 2
+    - path: models/scaler.pkl
+      hash: md5
+      md5: a4fb343b4a731f634d70f2a6b1a9f70d
+      size: 1239
+  model_training:
+    cmd: python src/Model_training.py
+    deps:
+    - path: data/processed
+      hash: md5
+      md5: 1018627b8f906db5b00a8256d2a20e9d.dir
+      size: 49110
+      nfiles: 2
+    - path: src/Model_training.py
+      hash: md5
+      md5: 426ef8171c01246dde556c96d5331db6
+      size: 4949
+    outs:
+    - path: models/best_model.pkl
+      hash: md5
+      md5: c2614dc1048cd1271571f7dd4d38eb11
+      size: 31153
+  model_evaluation:
+    cmd: python src/Model_evaluation.py
+    deps:
+    - path: data/processed
+      hash: md5
+      md5: 1018627b8f906db5b00a8256d2a20e9d.dir
+      size: 49110
+      nfiles: 2
+    - path: models/best_model.pkl
+      hash: md5
+      md5: c2614dc1048cd1271571f7dd4d38eb11
+      size: 31153
+    - path: src/Model_evaluation.py
+      hash: md5
+      md5: 594e0efe1ebd12a43a88c8de95464b92
+      size: 4537
+    outs:
+    - path: reports/metrics.json
+      hash: md5
+      md5: d5da8eb56f3c45ce8683b2acaeed27fa
+      size: 61
+    - path: reports/testing_set_comparison.png
+      hash: md5
+      md5: 05d70e1c7c71fc7477435d9ed5a7a4cb
+      size: 24742
+    - path: reports/training_set_comparison.png
+      hash: md5
+      md5: 567876642ba76aa235b22d3ab5a9726b
+      size: 28325
