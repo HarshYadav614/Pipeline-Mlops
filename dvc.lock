@@ -21,9 +21,9 @@ stages:
     deps:
     - path: data/raw
       hash: md5
-      md5: fcf7b0ed37202c752dab2dc4c3a97e6c.dir
-      size: 27308
-      nfiles: 4
+      md5: 65b3b6b233511a51f1a42f4de8b2a29c.dir
+      size: 9938
+      nfiles: 2
     - path: src/Pre-processing.py
       hash: md5
       md5: 4ea9823468ed9ae1347ad8be780f31e1
